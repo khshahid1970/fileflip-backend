@@ -54,3 +54,6 @@ async def convert_file(file: UploadFile = File(...), conversion_type: str = Form
 @app.get("/")
 def read_root():
     return {"message": "Backend is connected!"}
+@app.get("/")
+def read_root():
+    return {"message": "Backend is up and running!"}
