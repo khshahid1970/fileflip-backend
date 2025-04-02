@@ -51,3 +51,6 @@ async def convert_file(file: UploadFile = File(...), conversion_type: str = Form
         return {"error": "Unsupported conversion type."}
 
     return FileResponse(output_path, filename=os.path.basename(output_path))
+@app.get("/")
+def read_root():
+    return {"message": "Backend is connected!"}
