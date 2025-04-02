@@ -7,6 +7,9 @@ from fpdf import FPDF
 from PIL import Image
 
 app = FastAPI()
+@app.get("/")
+async def root():
+    return {"message": "Backend is up and running!"}
 UPLOAD_DIR = "temp_uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
