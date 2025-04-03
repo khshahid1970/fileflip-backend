@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import shutil
 import os
 import uuid
@@ -8,26 +8,27 @@ from PIL import Image
 
 app = FastAPI()
 
+UPLOAD_DIR = "temp_uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
 @app.get("/")
 async def root():
     return {"message": "Backend is up and running!"}
 
-UPLOAD_DIR = "temp_uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.post("/convert")
 async def convert_file(file: UploadFile = File(...), conversion_type: str = Form(...)):
-    ext = file.filename.split(".")[-1].lower()
-    uid = str(uuid.uuid4())
-    input_path = os.path.join(UPLOAD_DIR, f"{uid}_{file.filename}")
-
-    # Save uploaded file to disk
-    with open(input_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    output_path = input_path
-
     try:
+        ext = file.filename.split(".")[-1].lower()
+        uid = str(uuid.uuid4())
+        input_path = os.path.join(UPLOAD_DIR, f"{uid}_{file.filename}")
+
+        with open(input_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        output_path = input_path
+
         if conversion_type == "pdf-to-word":
             from pdf2docx import Converter
             output_path = input_path.replace(".pdf", ".docx")
@@ -57,13 +58,9 @@ async def convert_file(file: UploadFile = File(...), conversion_type: str = Form
             images[0].save(output_path, "JPEG")
 
         else:
-            return {"error": "Unsupported conversion type."}
+            return JSONResponse(content={"error": "Unsupported conversion type."}, status_code=400)
 
-        return FileResponse(
-            output_path,
-            filename=os.path.basename(output_path),
-            media_type="application/octet-stream"
-        )
+        return FileResponse(output_path, filename=os.path.basename(output_path))
 
     except Exception as e:
-        return {"error": str(e)}
+        return JSONResponse(content={"error": str(e)}, status_code=500)
