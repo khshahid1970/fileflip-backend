@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import os
 import uuid
@@ -7,12 +8,30 @@ from fpdf import FPDF
 from PIL import Image
 
 app = FastAPI()
+
+# ✅ Allow frontend to connect
+origins = [
+    "https://fileflip-frontend.onrender.com",  # Frontend Render URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ✅ Root route for testing
 @app.get("/")
 async def root():
     return {"message": "Backend is up and running!"}
+
+# ✅ File upload directory
 UPLOAD_DIR = "temp_uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# ✅ Conversion route
 @app.post("/convert")
 async def convert_file(file: UploadFile = File(...), conversion_type: str = Form(...)):
     ext = file.filename.split(".")[-1].lower()
@@ -37,23 +56,4 @@ async def convert_file(file: UploadFile = File(...), conversion_type: str = Form
         with open(input_path, "r", encoding="utf-8") as txt_file:
             for line in txt_file:
                 pdf.multi_cell(0, 10, line)
-        pdf.output(output_path)
-    elif conversion_type == "jpg-to-pdf":
-        output_path = input_path.replace(".jpg", ".pdf")
-        image = Image.open(input_path).convert("RGB")
-        image.save(output_path)
-    elif conversion_type == "pdf-to-jpg":
-        from pdf2image import convert_from_path
-        images = convert_from_path(input_path)
-        output_path = input_path.replace(".pdf", ".jpg")
-        images[0].save(output_path, "JPEG")
-    else:
-        return {"error": "Unsupported conversion type."}
-
-    return FileResponse(output_path, filename=os.path.basename(output_path))
-@app.get("/")
-def read_root():
-    return {"message": "Backend is connected!"}
-@app.get("/")
-def read_root():
-    return {"message": "Backend is up and running!"}
+        pdf.output
